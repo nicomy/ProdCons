@@ -7,9 +7,12 @@ public class TestProdCons extends Simulateur {
 
 	public TestProdCons(Observateur observateur){
 		super(observateur);
+		init("options.xml");
 	}
 
-	protected static String option = "";
+	protected static String nbProd = "";
+	protected static String nbCons = "";
+	protected static String nbBuffer = "";
 
 	protected static void init(String file) {
 		
@@ -25,15 +28,24 @@ public class TestProdCons extends Simulateur {
 				}catch(Exception e){e.printStackTrace();}
 			}
 		}
+		
+		// Récupération des paramètres 
 		Properties o = new Properties("jus/poc/prodcons/options/"+file);
-		option = o.getProperty("nbProd");
+		nbProd = o.getProperty("nbProd");
+		nbCons = o.getProperty("nbCons");
+		nbBuffer = o.getProperty("nbBuffer");
 	}
 
 	@Override
 	protected void run() throws Exception {
 		// Corps du programme principal
-		init("options.xml");
-		System.out.println("nbProd = "+option);
+		
+		// Affichage des paramètres 
+		System.out.println("Nombre de producteurs = "+this.nbProd+'\n');
+		System.out.println("Nombre de consommateurs = "+this.nbCons+'\n');
+		System.out.println("Taille buffer = "+this.nbBuffer+'\n');
+		
+		
 	}
 	public static void main(String[] args){
 		new TestProdCons(new Observateur()).start();		
