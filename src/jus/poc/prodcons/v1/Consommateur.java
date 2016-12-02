@@ -26,5 +26,4 @@ public class Consommateur extends Acteur implements _Consommateur {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-
 }
