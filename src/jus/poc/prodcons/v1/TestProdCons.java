@@ -1,8 +1,6 @@
 package jus.poc.prodcons.v1;
 
 import java.util.ArrayList;
-
-import jus.poc.prodcons.Acteur;
 import jus.poc.prodcons.Aleatoire;
 import jus.poc.prodcons.ControlException;
 import jus.poc.prodcons.Observateur;
@@ -11,6 +9,7 @@ import jus.poc.prodcons.Simulateur;
 public class TestProdCons extends Simulateur {
 
 	private ArrayList<Producteur> producteurs;
+	private ArrayList<Consommateur> consommateurs;
 	private Observateur obs = new Observateur();
 	protected static int nbProd;
 	protected static int nbCons;
@@ -23,6 +22,7 @@ public class TestProdCons extends Simulateur {
 	protected static int deviationNombreMoyenDeProduction;
 	protected static int nombreMoyenNbExemplaire;
 	protected static int deviationNombreMoyenNbExemplaire;
+	private ProdCons buffer;
 	
 	public TestProdCons(Observateur observateur){
 		super(observateur);
@@ -48,47 +48,111 @@ public class TestProdCons extends Simulateur {
 		
 		// Récupération des paramètres 
 		Properties o = new Properties("jus/poc/prodcons/options/"+file);
-		nbProd = Integer.parseInt(o.getProperty("nbProd"));
-		nbCons = Integer.parseInt(o.getProperty("nbCons"));
-		nbBuffer = Integer.parseInt(o.getProperty("nbBuffer"));
-		tempsMoyenProduction = Integer.parseInt(o.getProperty("tempsMoyenProduction"));
-		deviationTempsMoyenConsommation = Integer.parseInt(o.getProperty("deviationTempsMoyenConsommation"));
-		nombreMoyenDeProduction = Integer.parseInt(o.getProperty("nombreMoyenDeProduction"));
-		deviationNombreMoyenDeProduction = Integer.parseInt(o.getProperty("deviationNombreMoyenDeProduction"));
-		nombreMoyenNbExemplaire = Integer.parseInt(o.getProperty("nombreMoyenNbExemplaire"));
-		deviationNombreMoyenNbExemplaire = Integer.parseInt(o.getProperty("deviationNombreMoyenNbExemplaire"));
+		nbProd = o.get("nbProd");
+		nbCons = o.get("nbCons");
+		nbBuffer = o.get("nbBuffer");
+		tempsMoyenProduction = o.get("tempsMoyenProduction");
+		deviationTempsMoyenProduction = o.get("deviationTempsMoyenProduction");
+		tempsMoyenConsommation = o.get("tempsMoyenConsommation");
+		deviationTempsMoyenConsommation = o.get("deviationTempsMoyenConsommation");
+		nombreMoyenDeProduction = o.get("nombreMoyenDeProduction");
+		deviationNombreMoyenDeProduction = o.get("deviationNombreMoyenDeProduction");
+		nombreMoyenNbExemplaire = o.get("nombreMoyenNbExemplaire");
+		deviationNombreMoyenNbExemplaire = o.get("deviationNombreMoyenNbExemplaire");
 	}
-
-	@Override
-	protected void run() throws Exception {
-		// Corps du programme principal
-		creerProducteurs();
-		
-		// Affichage des paramètres 
-		/*System.out.println("Nombre de producteurs = "+this.nbProd+'\n');
-		System.out.println("Nombre de consommateurs = "+this.nbCons+'\n');
-		System.out.println("Taille buffer = "+this.nbBuffer+'\n');
-		*/
-		
-		// Affichage des messages produits par les producteurs
-		for(Producteur p : producteurs){			
-			System.out.println(p.toString());
-			p.afficherMessages();
-		}
-	}
+	
 	public static void main(String[] args){
 		new TestProdCons(new Observateur()).start();		
 	}
 	
+	public void displayConfiguration(){
+		System.out.println("nbProd = "+nbProd);
+		System.out.println("nbCons = "+nbCons);
+		System.out.println("nbBuffer = "+nbBuffer);
+		System.out.println("tempsMoyenProduction = "+tempsMoyenProduction);
+		System.out.println("deviationTempsMoyenProduction = "+deviationTempsMoyenProduction);
+		System.out.println("tempsMoyenConsommation = "+tempsMoyenConsommation);
+		System.out.println("deviationTempsMoyenConsommation = "+deviationTempsMoyenConsommation);
+		System.out.println("nombreMoyenDeProduction = "+nombreMoyenDeProduction);
+		System.out.println("deviationNombreMoyenDeProduction = "+deviationNombreMoyenDeProduction);
+		System.out.println("nombreMoyenNbExemplaire = "+nombreMoyenNbExemplaire);
+		System.out.println("deviationNombreMoyenNbExemplaire = "+deviationNombreMoyenNbExemplaire);		
+	}
+
+	@Override
+	protected void run() throws Exception {
+		
+		//Affichage de la configuration 
+		//displayConfiguration();
+		
+		// Création du buffer
+		buffer = new ProdCons(nbBuffer);
+		
+		// Création des producteurs et des consommateurs
+		creerProducteurs();
+		System.out.println("Création des producteurs terminée");
+		
+		creerConsommateurs();
+		System.out.println("Création des consommateurs terminée");
+		
+		// A cet instant du programme, il faut attendre que tout les threads producteurs aient finis de produire:
+		// join : met le thread courant en attente en attendant que le thread appelant soit mort
+		for(Producteur p : producteurs){
+			p.join();
+		}
+		System.out.println("Les messages ont tous été produits");
+		
+		// Ici, toutes les productions sont terminées, il faut alors attendre que le buffer soit vide avant de les interrompre
+		do{
+			Thread.yield();
+		}while(buffer.enAttente()>0);
+		
+		// Tous les messages ont été lus
+		System.out.println("Les messages ont tous été lus");
+		
+		// Interruption de tous les consommateurs
+		for(Consommateur c : consommateurs){
+			c.interrupt();
+		}
+
+	}
+
+	
+	// Méthode de création des producteurs
 	public void creerProducteurs(){
 		producteurs = new ArrayList<>();
-		//TODO			
+		
+		System.out.println(nbProd+" producteurs à créer");
+		
+		// alea va servir à donner un nombre aléatoire de messages à produire pour chaque producteur
 		Aleatoire alea = new Aleatoire(nombreMoyenDeProduction,deviationNombreMoyenDeProduction);
 		for(int i = 0;i<nbProd;i++){			
 			try {	
-				producteurs.add(new Producteur(1, obs, tempsMoyenProduction,deviationTempsMoyenProduction, alea));
+				System.out.println("Création du producteur "+(i+1));
+				Producteur p = new Producteur(obs, buffer, tempsMoyenProduction,deviationTempsMoyenProduction, alea);
+				producteurs.add(p);
+				p.start();
+			} catch (ControlException e) {
+				System.out.println("Erreur lors de la création des producteurs");
+				e.printStackTrace();
+			}		
+		}
+	}
+	
+	
+	// Méthode de création des consommateurs
+	public void creerConsommateurs(){
+		consommateurs = new ArrayList<>();
+		System.out.println(nbCons + " consommateurs à créer");
+		for(int i = 0;i<nbCons;i++){			
+			try {	
+				System.out.println("Création du consommateur "+(i+1));
+				Consommateur c = new Consommateur(obs,buffer,tempsMoyenConsommation,deviationTempsMoyenConsommation);
+				consommateurs.add(c);
+				c.start();
 			} catch (ControlException e) {
 				// TODO Auto-generated catch block
+				System.out.println("Erreur lors de la création des consommateurs");
 				e.printStackTrace();
 			}		
 		}

@@ -1,29 +1,55 @@
 package jus.poc.prodcons.v1;
 
 import jus.poc.prodcons.Acteur;
+import jus.poc.prodcons.Aleatoire;
 import jus.poc.prodcons.ControlException;
+import jus.poc.prodcons.Message;
 import jus.poc.prodcons.Observateur;
 import jus.poc.prodcons._Consommateur;
 
 public class Consommateur extends Acteur implements _Consommateur {
 	
-	/*
-	 * type : 
-	 * 1 => typeProducteur
-	 * 2 => typeConsommateur
-	 * deviationTempsDeTraitement = l'écart type au temps moyen de traitement par cet acteur d'un message
-	 * moyenneTempsDeTraitement = le temps moyen de traitement par cet acteur d'un message
-	 */
-	protected Consommateur(int type, Observateur observateur, int moyenneTempsDeTraitement,
+	// Le nombre de messages que le consommateur a lu
+	private int nbMessagesConsommes = 0;
+	
+	// Buffer dans lequel le consommateur va pouvoir aller chercher les messages à traiter
+	private ProdCons buffer;
+	
+	protected Consommateur(Observateur observateur, ProdCons buffer,  int moyenneTempsDeTraitement,
 			int deviationTempsDeTraitement) throws ControlException {
-		super(type, observateur, moyenneTempsDeTraitement, deviationTempsDeTraitement);
+		super(Acteur.typeConsommateur, observateur, moyenneTempsDeTraitement, deviationTempsDeTraitement);
 		// TODO Auto-generated constructor stub
+		this.buffer = buffer;
 	}
 
 	@Override
-	//renvoie le nombre de messages (à) traités(er)
+	//renvoie le nombre de messages consommés
 	public int nombreDeMessages() {
 		// TODO Auto-generated method stub
-		return 0;
+		return nbMessagesConsommes;
+	}
+	
+	
+	// Run un thread de type consommateur => un consommateur peut lire un message dans le buffer tant que c'est possible.
+	public void run(){		
+		try{
+			// Les consommateurs sont constamment en train d'essayer de lire les messages contenus dans le buffer
+			while(true){
+				// on récupère un message
+				
+				Message m = this.buffer.get(this);
+				
+				//Calcul du temps de consommation
+				int tempsCons = Aleatoire.valeur(moyenneTempsDeTraitement(), deviationTempsDeTraitement());				
+				// On simule l'attente 
+				
+				Thread.sleep(tempsCons);
+							
+				// On a lu 1 message, il faut donc incrémenter nbMessageConsommes
+				nbMessagesConsommes++;
+			}			
+		}catch(InterruptedException e){
+			
+		}
 	}
 }
