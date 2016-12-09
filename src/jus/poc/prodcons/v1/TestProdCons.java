@@ -12,9 +12,17 @@ public class TestProdCons extends Simulateur {
 
 	private ArrayList<Producteur> producteurs;
 	private Observateur obs = new Observateur();
-	protected static String nbProd = "";
-	protected static String nbCons = "";
-	protected static String nbBuffer = "";
+	protected static int nbProd;
+	protected static int nbCons;
+	protected static int nbBuffer;
+	protected static int tempsMoyenProduction;
+	protected static int deviationTempsMoyenProduction;
+	protected static int tempsMoyenConsommation;
+	protected static int deviationTempsMoyenConsommation;
+	protected static int nombreMoyenDeProduction;
+	protected static int deviationNombreMoyenDeProduction;
+	protected static int nombreMoyenNbExemplaire;
+	protected static int deviationNombreMoyenNbExemplaire;
 	
 	public TestProdCons(Observateur observateur){
 		super(observateur);
@@ -40,22 +48,29 @@ public class TestProdCons extends Simulateur {
 		
 		// Récupération des paramètres 
 		Properties o = new Properties("jus/poc/prodcons/options/"+file);
-		nbProd = o.getProperty("nbProd");
-		nbCons = o.getProperty("nbCons");
-		nbBuffer = o.getProperty("nbBuffer");
+		nbProd = Integer.parseInt(o.getProperty("nbProd"));
+		nbCons = Integer.parseInt(o.getProperty("nbCons"));
+		nbBuffer = Integer.parseInt(o.getProperty("nbBuffer"));
+		tempsMoyenProduction = Integer.parseInt(o.getProperty("tempsMoyenProduction"));
+		deviationTempsMoyenConsommation = Integer.parseInt(o.getProperty("deviationTempsMoyenConsommation"));
+		nombreMoyenDeProduction = Integer.parseInt(o.getProperty("nombreMoyenDeProduction"));
+		deviationNombreMoyenDeProduction = Integer.parseInt(o.getProperty("deviationNombreMoyenDeProduction"));
+		nombreMoyenNbExemplaire = Integer.parseInt(o.getProperty("nombreMoyenNbExemplaire"));
+		deviationNombreMoyenNbExemplaire = Integer.parseInt(o.getProperty("deviationNombreMoyenNbExemplaire"));
 	}
 
 	@Override
 	protected void run() throws Exception {
-		producteurs = new ArrayList<>();	
-		creerProducteurs();
 		// Corps du programme principal
+		creerProducteurs();
 		
 		// Affichage des paramètres 
 		/*System.out.println("Nombre de producteurs = "+this.nbProd+'\n');
 		System.out.println("Nombre de consommateurs = "+this.nbCons+'\n');
 		System.out.println("Taille buffer = "+this.nbBuffer+'\n');
 		*/
+		
+		// Affichage des messages produits par les producteurs
 		for(Producteur p : producteurs){			
 			System.out.println(p.toString());
 			p.afficherMessages();
@@ -66,10 +81,12 @@ public class TestProdCons extends Simulateur {
 	}
 	
 	public void creerProducteurs(){
-		Aleatoire alea = new Aleatoire(10, 5);
-		for(int i = 0;i<Integer.parseInt(nbProd);i++){			
-			try {				
-				producteurs.add(new Producteur(1, obs, 1000, 100, alea));
+		producteurs = new ArrayList<>();
+		//TODO			
+		Aleatoire alea = new Aleatoire(nombreMoyenDeProduction,deviationNombreMoyenDeProduction);
+		for(int i = 0;i<nbProd;i++){			
+			try {	
+				producteurs.add(new Producteur(1, obs, tempsMoyenProduction,deviationTempsMoyenProduction, alea));
 			} catch (ControlException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

@@ -16,6 +16,6 @@ public class Message1 implements Message{
 
 	@Override
 	public String toString() {
-		return "Message1 [rang=" + rang + ", rangProducteur=" + idProducteur + ", message=" + message + "]";
+		return "Message1 [rang=" + rang + ", idProducteur=" + idProducteur + ", message=" + message + "]";
 	}	
 }
